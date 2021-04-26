@@ -5,6 +5,7 @@
 #include <QFile>
 #include "server.h"
 #include "defs.h"
+#include "db_mng.h"
 
 server::server(QObject *parent) : QObject(parent)
 {
@@ -23,6 +24,8 @@ void server::init()
         QCRI << qtcp_serv->serverError() << qtcp_serv->errorString();
         exit(-1);
     }
+    // create or open DB
+    db = new db_mng(db_file);
 }
 
 void server::newConnection()
@@ -44,15 +47,13 @@ void server::readClient()
     QJsonDocument jdoc = QJsonDocument::fromJson(arr);
     qint64 timestamp;
     jdoc = client_data_addtimestamp(jdoc, &timestamp);
-    client_data_save(jdoc);
-    QString res = QString(arr);
-    QDEB << "recv:id:" + QString::number(idusersocs) + "data:" + res;
-}
-
-void server::connectionClosed()
-{
-    QDEB << "connection closed";
-
+    // save to the file
+    client_data_file_save(jdoc);
+    // save to DB
+    db->insert(jdoc);
+    QJsonDocument jall = db->get_all();
+    //QString res = QString(arr);
+    QDEB << "recv:id:" + QString::number(idusersocs) + "data:" + QString(jall.toJson());
 }
 
 QJsonDocument server::client_data_addtimestamp(QJsonDocument jdoc, qint64* timestamp)
@@ -67,22 +68,22 @@ QJsonDocument server::client_data_addtimestamp(QJsonDocument jdoc, qint64* times
     return jdoc_new;
 }
 
-void server::client_data_save(QJsonDocument jdoc)
+void server::client_data_file_save(QJsonDocument jdoc)
 {
-    QFile fobj(JSON_file);
+    QFile fobj(LOG_file);
     if(!fobj.open(QFile::WriteOnly| QFile::Text | QFile::Append)){
-        QINFO <<"Failed to open "<<JSON_file;
+        QINFO <<"Failed to open "<<LOG_file;
         exit(1);
     }
     fobj.write(jdoc.toJson());
     fobj.close();
 }
 
-QJsonDocument server::client_data_read()
+QJsonDocument server::client_data_file_read()
 {
-    QFile fobj(JSON_file);
+    QFile fobj(LOG_file);
     if(!fobj.open(QFile::ReadOnly| QFile::Text)){
-        QINFO <<"Failed to open "<<JSON_file;
+        QINFO <<"Failed to open "<<LOG_file;
         exit(1);
     }
     QString data = fobj.readAll();

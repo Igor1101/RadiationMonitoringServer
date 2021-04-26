@@ -12,7 +12,8 @@
 #define NAME_SZ 64
 #define APP_VERSION "0.0"
 #define APP_NAME "RadiationMonitoringServer"
-#define JSON_FILE_DEF "err.json"
+#define LOG_FILE_DEF APP_NAME "_" "LOG" ".log"
+#define DB_FILE_DEF APP_NAME ".db"
 struct client_info_t {
     char usrname[NAME_SZ];
 };

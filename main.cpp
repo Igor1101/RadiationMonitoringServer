@@ -6,7 +6,9 @@
 #include "defs.h"
 
 int server_port;
-QString server_JSON_file;
+QString server_LOG_file;
+QString server_SQL_file;
+QString server_DB_file;
 class Task : public QObject
 {
     Q_OBJECT
@@ -24,8 +26,9 @@ signals:
 void Task::run()
 {
     static server serv;
-    serv.set_jsonfile(server_JSON_file);
+    serv.set_logfile(server_LOG_file);
     serv.set_port(server_port);
+    serv.set_dbfile(server_DB_file);
     serv.init();
 }
 
@@ -56,7 +59,8 @@ int main(int argc, char *argv[])
     parser.addVersionOption();
     parser.addOptions({
                           {{ "p", "port"}, "порт", "значення" },
-                          {{ "j", "json"}, "файл JSON DB", "значення" }
+                          {{ "l", "logfile"}, "файл log", "значення" },
+                          {{ "d", "sqlbd"}, "файл bd", "значення" }
                       }
                 );
     parser.process(arguments);
@@ -66,10 +70,16 @@ int main(int argc, char *argv[])
         port = PORT_NUM_DEF;
     }
     server_port = port;
-    server_JSON_file = parser.value("j");
-    if(server_JSON_file.size() == 0) {
-        server_JSON_file = JSON_FILE_DEF;
+    server_LOG_file = parser.value("l");
+    if(server_LOG_file.size() == 0) {
+        server_LOG_file = LOG_FILE_DEF;
     }
+    // BD
+    server_DB_file = parser.value("d");
+    if(server_DB_file.size() == 0) {
+        server_DB_file = DB_FILE_DEF;
+    }
+
     // creating task
     Task *task = new Task(&a);
 

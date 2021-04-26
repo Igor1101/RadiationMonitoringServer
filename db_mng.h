@@ -14,6 +14,7 @@ class db_mng
 public:
     db_mng(const QString & file);
     bool insert(QJsonDocument jdoc);
+    QJsonDocument get_all();
 private:
     const QString tb_name = "dosimeter_table";
     bool cr_table();
