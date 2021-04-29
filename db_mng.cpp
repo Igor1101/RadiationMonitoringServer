@@ -60,14 +60,15 @@ bool db_mng::cr_table()
 bool db_mng::insert(QJsonDocument jdoc)
 {
     QJsonObject jobj = jdoc.object();
-    QString timestamp = jobj.value("timestamp").toString();
+    qint64 timestamp = jobj.value("timestamp").toInt();
     QString dev_id = jobj.value("dev_id").toString();
     QString GPS = jobj.value("GPS").toString();
-    QString NanoSv = jobj.value("NanoSv").toString();
-    QString uptime_s = jobj.value("uptime_s").toString();
-    QString s = "INSERT INTO %1(timestamp, json, dev_id, GPS, NanoSv, uptime_s) "
-            "VALUES (\"%2\", \"%3\", \"%4\", \"%5\", \"%6\", \"%7\""");";
-    QString sins = s.arg(tb_name, timestamp, "JSON", dev_id, GPS, NanoSv, uptime_s);
+    qint64 NanoSv = jobj.value("NanoSv").toInt();
+    qint64 uptime_s = jobj.value("uptime_s").toInt();
+    QString s = "INSERT INTO %1(timestamp, dev_id, GPS, NanoSv, uptime_s) "
+            "VALUES (\"%2\", \"%3\", \"%4\", \"%5\", \"%6\""
+            ");";
+    QString sins = s.arg(tb_name, QString::number(timestamp), dev_id, GPS, QString::number(NanoSv), QString::number(uptime_s));
     QSqlQuery q;
     bool res = q.exec(sins);
     if(!res)
@@ -89,11 +90,11 @@ QJsonDocument db_mng::get_all()
     QJsonArray jarr;
     while(q.next()) {
         QJsonObject jobj_inst;
-        QString timestamp = q.value(rec.indexOf("timestamp")).toString();
+        qint64 timestamp = q.value(rec.indexOf("timestamp")).toInt();
         QString dev_id = q.value(rec.indexOf("dev_id")).toString();
         QString GPS = q.value(rec.indexOf("GPS")).toString();
-        QString NanoSv = q.value(rec.indexOf("NanoSv")).toString();
-        QString uptime_s = q.value(rec.indexOf("uptime_s")).toString();
+        qint64 NanoSv = q.value(rec.indexOf("NanoSv")).toInt();
+        qint64 uptime_s = q.value(rec.indexOf("uptime_s")).toInt();
         jobj_inst.insert("timestamp", QJsonValue::fromVariant(timestamp));
         jobj_inst.insert("dev_id", QJsonValue::fromVariant(dev_id));
         jobj_inst.insert("GPS", QJsonValue::fromVariant(GPS));
@@ -102,7 +103,7 @@ QJsonDocument db_mng::get_all()
         jarr.push_back(jobj_inst);
     }
     QJsonObject jobj;
-    jobj.insert("recorded", jarr);
+    jobj.insert("server_recorded", jarr);
     QJsonDocument jdoc(jobj);
     return jdoc;
 }

@@ -49,6 +49,8 @@ void server::readClient()
     jdoc = client_data_addtimestamp(jdoc, &timestamp);
     // save to the file
     client_data_file_save(jdoc);
+    // findout what is it
+    QJsonObject jobj = jdoc.object();
     // save to DB
     db->insert(jdoc);
     QJsonDocument jall = db->get_all();
