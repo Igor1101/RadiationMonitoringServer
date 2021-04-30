@@ -107,3 +107,36 @@ QJsonDocument db_mng::get_all()
     QJsonDocument jdoc(jobj);
     return jdoc;
 }
+
+QJsonDocument db_mng::get(QString condition)
+{
+    QString s = "select * from %1 where %2;";
+    QString sins = s.arg(tb_name, condition);
+    QSqlQuery q;
+    if(!q.exec(sins)) {
+        QINFO << "db: select* not working";
+        QJsonDocument jdoc;
+        return jdoc;
+    }
+    QSqlRecord rec = q.record();
+    QJsonArray jarr;
+    while(q.next()) {
+        QJsonObject jobj_inst;
+        qint64 timestamp = q.value(rec.indexOf("timestamp")).toInt();
+        QString dev_id = q.value(rec.indexOf("dev_id")).toString();
+        QString GPS = q.value(rec.indexOf("GPS")).toString();
+        qint64 NanoSv = q.value(rec.indexOf("NanoSv")).toInt();
+        qint64 uptime_s = q.value(rec.indexOf("uptime_s")).toInt();
+        jobj_inst.insert("timestamp", QJsonValue::fromVariant(timestamp));
+        jobj_inst.insert("dev_id", QJsonValue::fromVariant(dev_id));
+        jobj_inst.insert("GPS", QJsonValue::fromVariant(GPS));
+        jobj_inst.insert("NanoSv", QJsonValue::fromVariant(NanoSv));
+        jobj_inst.insert("uptime_s", QJsonValue::fromVariant(uptime_s));
+        jarr.push_back(jobj_inst);
+    }
+    QJsonObject jobj;
+    jobj.insert("server_recorded", jarr);
+    QJsonDocument jdoc(jobj);
+    return jdoc;
+}
+

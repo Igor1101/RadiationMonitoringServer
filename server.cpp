@@ -51,8 +51,32 @@ void server::readClient()
     client_data_file_save(jdoc);
     // findout what is it
     QJsonObject jobj = jdoc.object();
-    // save to DB
-    db->insert(jdoc);
+    // client can be "app" or "sensor"
+    QString client = jobj.value("client").toString();
+    if(client == "app") {
+        // manage app tasks
+        // parse app specific funcs
+        // attr "mode" has following values:
+        // "get_data_all", "get_data_since_time" , "set_settings", ""
+        QString mode = jobj.value("mode").toString();
+        if(mode == "get_data_all") {
+            QJsonDocument jall = db->get_all();
+            clientSocket->write(jall.toJson());
+        } else if(mode == "get_data_since_time") {
+            // since_time attr is used
+            qint64 since_time = jobj.value("since_time").toInt();
+            QJsonDocument jfound = db->get("timestamp > " + QString::number(since_time));
+            clientSocket->write(jfound.toJson());
+        }
+    } else if(client == "sensor") {
+        // do sensor specific staff
+    }
+    // save to DB needed?
+    QString DBsave = jobj.value("DBsave").toString();
+    if(DBsave == "true" && client == "sensor") {
+        // save to DB
+        db->insert(jdoc);
+    }
     QJsonDocument jall = db->get_all();
     //QString res = QString(arr);
     QDEB << "recv:id:" + QString::number(idusersocs) + "data:" + QString(jall.toJson());
@@ -61,11 +85,10 @@ void server::readClient()
 QJsonDocument server::client_data_addtimestamp(QJsonDocument jdoc, qint64* timestamp)
 {
     qint64 time_st = QDateTime::currentSecsSinceEpoch();
-    QString time_s = QString::number(time_st);
     if(timestamp != NULL)
         *timestamp = time_st;
     QJsonObject jobj = jdoc.object();
-    jobj.insert("timestamp", time_s);
+    jobj.insert("timestamp", time_st);
     QJsonDocument jdoc_new(jobj);
     return jdoc_new;
 }
