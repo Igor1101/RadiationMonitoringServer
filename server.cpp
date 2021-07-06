@@ -124,6 +124,7 @@ void server::readClient()
 //    QJsonDocument jall = db->get_all();
     //QString res = QString(arr);
     QDEB << "recv:id:" + QString::number(idusersocs) ;//+ "data:" + QString(jall.toJson());
+    clientSocket->waitForBytesWritten(400);
     clientSocket->disconnect();
     clientSocket->close();
 }
