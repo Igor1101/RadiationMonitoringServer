@@ -4,10 +4,13 @@
 #include <QJsonObject>
 #include <QFile>
 #include <QTime>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
 #include "server.h"
 #include "defs.h"
 #include "db_mng.h"
-
+QFile fobj;
 server::server(QObject *parent) : QObject(parent)
 {
     qtcp_serv = new QTcpServer(this);
@@ -16,7 +19,13 @@ server::server(QObject *parent) : QObject(parent)
 }
 
 void server::init()
-{
+{ 
+    //fobj.setName(LOG_file);
+    /*if(!fobj.open(QFile::WriteOnly| QFile::Text | QFile::Append)){
+        QINFO <<"Failed to open "<<LOG_file;
+        exit(1);
+    }*/
+
     status = qtcp_serv->listen(QHostAddress::Any, port);
     if(status) {
         QINFO << U("Сервер чекає на клієнтів, порт:") <<  port;
@@ -34,9 +43,14 @@ void server::newConnection()
     QINFO << U("нове з'єднання");
     QTcpSocket * socket = qtcp_serv->nextPendingConnection();
     int idusersocs=socket->socketDescriptor();
+    int flag = 1;
+    if(setsockopt(socket->socketDescriptor(), SOL_SOCKET, SO_REUSEADDR, (const char*)&flag, sizeof(int)) < 0 ) { 
+        QINFO << ("cant set SO_REUSEADDR");
+    } 
     clients[idusersocs]=socket;
     // append signal from this user
     connect(clients[idusersocs],SIGNAL(readyRead()),this, SLOT(readClient()));
+    socket->setSocketOption(QAbstractSocket::KeepAliveOption,1);
 }
 
 void server::readClient()
@@ -78,9 +92,9 @@ void server::readClient()
         // save to DB
         db->insert(jdoc);
     }
-    QJsonDocument jall = db->get_all();
+//    QJsonDocument jall = db->get_all();
     //QString res = QString(arr);
-    QDEB << "recv:id:" + QString::number(idusersocs) + "data:" + QString(jall.toJson());
+    QDEB << "recv:id:" + QString::number(idusersocs) ;//+ "data:" + QString(jall.toJson());
 }
 
 QJsonDocument server::client_data_addtimestamp(QJsonDocument jdoc, qint64* timestamp)
@@ -96,13 +110,7 @@ QJsonDocument server::client_data_addtimestamp(QJsonDocument jdoc, qint64* times
 
 void server::client_data_file_save(QJsonDocument jdoc)
 {
-    QFile fobj(LOG_file);
-    if(!fobj.open(QFile::WriteOnly| QFile::Text | QFile::Append)){
-        QINFO <<"Failed to open "<<LOG_file;
-        exit(1);
-    }
-    fobj.write(jdoc.toJson());
-    fobj.close();
+    //fobj.write(jdoc.toJson());
 }
 
 QJsonDocument server::client_data_file_read()

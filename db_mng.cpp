@@ -36,7 +36,7 @@ bool db_mng::cr_table()
             QINFO << "table " << tb_name << " not found, creating new one";
 
             QString s = 	"CREATE TABLE %1 ("
-                "timestamp integer PRIMARY KEY NOT NULL, "
+                "timestamp integer KEY NOT NULL, "
                 "json VARCHAR(511), "
                 "dev_id	  VARCHAR(32) NOT NULL,"
                 "GPS	  VARCHAR(256),"
@@ -69,10 +69,12 @@ bool db_mng::insert(QJsonDocument jdoc)
             "VALUES (\"%2\", \"%3\", \"%4\", \"%5\", \"%6\""
             ");";
     QString sins = s.arg(tb_name, QString::number(timestamp), dev_id, GPS, QString::number(NanoSv), QString::number(uptime_s));
+    db.transaction();
     QSqlQuery q;
     bool res = q.exec(sins);
+    db.commit();
     if(!res)
-        QINFO << "cr_table:" << q.lastError().databaseText() << " " << q.lastError().driverText();
+        QINFO << "table:" << q.lastError().databaseText() << " " << q.lastError().driverText();
     return res;
 }
 
